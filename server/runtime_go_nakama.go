@@ -3958,3 +3958,19 @@ func (n *RuntimeGoNakamaModule) ChannelIdBuild(ctx context.Context, senderId, ta
 func (n *RuntimeGoNakamaModule) CCRPCCall(ctx context.Context, name, key, cid string, vars map[string]string, in []byte) ([]byte, error) {
 	return CC().RPCCall(ctx, name, key, cid, vars, in)
 }
+
+func (n *RuntimeGoNakamaModule) AuthenticateToken(ctx context.Context, token string) (userID string, username string, vars map[string]string, expiry int64, ok bool) {
+	uid, name, nvars, nexpiry, ntoken, isTokenAuth := parseBearerAuth([]byte(n.config.GetSession().EncryptionKey), token)
+	userID = uid.String()
+	username = name
+	vars = nvars
+	expiry = nexpiry
+
+	if !isTokenAuth || !n.sessionCache.IsValidSession(uid, expiry, ntoken) {
+		ok = false
+		return
+	}
+
+	ok = true
+	return
+}
