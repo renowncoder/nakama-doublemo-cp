@@ -3965,12 +3965,16 @@ func (n *RuntimeGoNakamaModule) AuthenticateToken(ctx context.Context, token str
 	username = name
 	vars = nvars
 	expiry = nexpiry
-
-	if !isTokenAuth || !n.sessionCache.IsValidSession(uid, expiry, ntoken) {
-		ok = false
+	if !isTokenAuth {
 		return
 	}
 
-	ok = true
+	if n.sessionCache.IsValidSession(uid, nexpiry, ntoken) {
+		ok = true
+		return
+	}
+
+	// cluster search track
+	ok = n.tracker.StreamExists(PresenceStream{Mode: StreamModeNotifications, Subject: uid})
 	return
 }

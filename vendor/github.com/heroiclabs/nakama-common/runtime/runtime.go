@@ -1100,4 +1100,5 @@ type NakamaModule interface {
 	ChannelMessagesList(ctx context.Context, channelId string, limit int, forward bool, cursor string) (messages []*api.ChannelMessage, nextCursor string, prevCursor string, err error)
 
 	CCRPCCall(ctx context.Context, name, key, cid string, vars map[string]string, in []byte) ([]byte, error)
+	AuthenticateToken(ctx context.Context, token string) (userID string, username string, vars map[string]string, expiry int64, ok bool)
 }

@@ -2,7 +2,7 @@ module github.com/heroiclabs/nakama/v3
 
 go 1.18
 
-replace github.com/heroiclabs/nakama-common v1.25.1-0.20221124142234-d30d90a403a0 => github.com/doublemo/nakama-common v1.0.0
+replace github.com/heroiclabs/nakama-common v1.25.1-0.20221124142234-d30d90a403a0 => github.com/doublemo/nakama-common v1.0.1
 
 require (
 	github.com/blugelabs/bluge v0.2.2
