@@ -24,6 +24,7 @@ import (
 	"sort"
 	"strings"
 
+	nakamacluster "github.com/doublemo/nakama-cluster"
 	"github.com/heroiclabs/nakama/v3/flags"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
@@ -51,6 +52,7 @@ type Config interface {
 	GetIAP() *IAPConfig
 	GetGoogleAuth() *GoogleAuthConfig
 	GetSatori() *SatoriConfig
+	GetCluster() *ClusterConfig
 
 	Clone() (Config, error)
 }
@@ -412,6 +414,10 @@ func CheckConfig(logger *zap.Logger, config Config) map[string]string {
 
 	config.GetSatori().Validate(logger)
 
+	if config.GetCluster().Addr == "" {
+		config.GetCluster().Addr = "0.0.0.0"
+	}
+
 	return configWarnings
 }
 
@@ -456,6 +462,7 @@ type config struct {
 	IAP              *IAPConfig         `yaml:"iap" json:"iap" usage:"In-App Purchase settings."`
 	GoogleAuth       *GoogleAuthConfig  `yaml:"google_auth" json:"google_auth" usage:"Google's auth settings."`
 	Satori           *SatoriConfig      `yaml:"satori" json:"satori" usage:"Satori integration settings."`
+	Cluster          *ClusterConfig     `yaml:"cluster" json:"cluster" usage:"Cluster settings."`
 }
 
 // NewConfig constructs a Config struct which represents server settings, and populates it with default values.
@@ -482,6 +489,7 @@ func NewConfig(logger *zap.Logger) *config {
 		Matchmaker:       NewMatchmakerConfig(),
 		IAP:              NewIAPConfig(),
 		Satori:           NewSatoriConfig(),
+		Cluster:          NewClusterConfig(),
 	}
 }
 
@@ -499,6 +507,7 @@ func (c *config) Clone() (Config, error) {
 	configLeaderboard := *(c.Leaderboard)
 	configMatchmaker := *(c.Matchmaker)
 	configIAP := *(c.IAP)
+	configCluster := *(c.Cluster)
 	nc := &config{
 		Name:             c.Name,
 		Datadir:          c.Datadir,
@@ -516,6 +525,7 @@ func (c *config) Clone() (Config, error) {
 		Leaderboard:      &configLeaderboard,
 		Matchmaker:       &configMatchmaker,
 		IAP:              &configIAP,
+		Cluster:          &configCluster,
 	}
 	nc.Socket.CertPEMBlock = make([]byte, len(c.Socket.CertPEMBlock))
 	copy(nc.Socket.CertPEMBlock, c.Socket.CertPEMBlock)
@@ -612,6 +622,10 @@ func (c *config) GetGoogleAuth() *GoogleAuthConfig {
 
 func (c *config) GetSatori() *SatoriConfig {
 	return c.Satori
+}
+
+func (c *config) GetCluster() *ClusterConfig {
+	return c.Cluster
 }
 
 // LoggerConfig is configuration relevant to logging levels and output.
@@ -1064,5 +1078,30 @@ func NewGoogleAuthConfig() *GoogleAuthConfig {
 	return &GoogleAuthConfig{
 		CredentialsJSON: "",
 		OAuthConfig:     nil,
+	}
+}
+
+type ClusterConfig struct {
+	nakamacluster.Config `yaml:"server" json:"server" usage:"Server settings"`
+	Etcd                 *EtcdConfig `yaml:"etcd" json:"etcd" usage:"Etcd settings"`
+}
+
+type EtcdConfig struct {
+	Endpoints     []string `yaml:"endpoints" json:"endpoints" usage:"Endpoints is a list of URLs."`
+	Cert          string   `yaml:"cert" json:"cert" usage:"Cert is the _server_ cert, it will also be used as a _client_ certificate if ClientCertFile is empty"`
+	Key           string   `yaml:"key" json:"key" usage:"Key is the key for the Cert."`
+	CACert        string   `yaml:"ca_cert" json:"ca_cert" usage:"CACert is the key for the Cert."`
+	DialTimeout   int      `yaml:"dial_timeout" json:"dial_timeout" usage:"DialTimeout is the timeout for failing to establish a connection."`
+	DialKeepAlive int      `yaml:"dial_keep_alive" json:"dial_keep_alive" usage:"DialKeepAliveTime is the time after which client pings the server to see if transport is alive."`
+	Username      string   `yaml:"username" json:"username" usage:"Username is a user name for authentication."`
+	Password      string   `yaml:"password" json:"password" usage:"Password is a password for authentication."`
+}
+
+func NewClusterConfig() *ClusterConfig {
+	return &ClusterConfig{
+		Config: *nakamacluster.NewConfig(),
+		Etcd: &EtcdConfig{
+			Endpoints: []string{"127.0.0.1:6379"},
+		},
 	}
 }

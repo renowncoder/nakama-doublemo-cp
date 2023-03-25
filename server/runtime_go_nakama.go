@@ -4001,6 +4001,50 @@ func (n *RuntimeGoNakamaModule) ChannelIdBuild(ctx context.Context, senderId, ta
 	return channelId, nil
 }
 
+// @group cluster
+// @summary call remote node.
+// @param ctx(type=context.Context) The context object represents information about the server and requester.
+// @param name(type=string) node name
+// @param key(type=string) userID
+// @param cid(type=string) route name
+// @param vars(type=map[string]string) The vars
+// @param in(type=[]byte) body
+// @return body([]byte) data.
+// @return error(error) An optional error value if an error occurred.
+func (n *RuntimeGoNakamaModule) CCRPCCall(ctx context.Context, name, key, cid string, vars map[string]string, in []byte) ([]byte, error) {
+	return CC().RPCCall(ctx, name, key, cid, vars, in)
+}
+
+// @group authenticate
+// @summary Authenticate user a session token using an sign in token.
+// @param ctx(type=context.Context) The context object represents information about the server and requester.
+// @param token(type=string) sign in token.
+// @return userID(string) The user ID of the authenticated user.
+// @return username(string) The username of the authenticated user.
+// @return vars(map[string]string,) params.
+// @return expiry(int64) The session expiry.
+// @return ok(bool) online.
+// @return error(error) An optional error value if an error occurred.
+func (n *RuntimeGoNakamaModule) AuthenticateToken(ctx context.Context, token string) (userID string, username string, vars map[string]string, expiry int64, ok bool) {
+	uid, name, nvars, nexpiry, ntoken, isTokenAuth := parseBearerAuth([]byte(n.config.GetSession().EncryptionKey), token)
+	userID = uid.String()
+	username = name
+	vars = nvars
+	expiry = nexpiry
+	if !isTokenAuth {
+		return
+	}
+
+	if n.sessionCache.IsValidSession(uid, nexpiry, ntoken) {
+		ok = true
+		return
+	}
+
+	// cluster search track
+	ok = n.tracker.StreamExists(PresenceStream{Mode: StreamModeNotifications, Subject: uid})
+	return
+}
+
 // @group satori
 // @summary Get the Satori client.
 // @return satori(runtime.Satori) The Satori client.

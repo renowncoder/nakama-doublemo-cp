@@ -17,7 +17,12 @@ import (
 // for some discussion about these unsafe conversions.
 //
 // In the future it's possible that compiler optimizations will make these
-// unsafe operations unnecessary: https://golang.org/issue/2205.
+// XxxString functions unnecessary by realizing that calls such as
+// Sum64([]byte(s)) don't need to copy s. See https://go.dev/issue/2205.
+// If that happens, even if we keep these functions they can be replaced with
+// the trivial safe code.
+
+// NOTE: The usual way of doing an unsafe string-to-[]byte conversion is:
 //
 // Both of these wrapper functions still incur function call overhead since they
 // will not be inlined. We could write Go/asm copies of Sum64 and Digest.Write
