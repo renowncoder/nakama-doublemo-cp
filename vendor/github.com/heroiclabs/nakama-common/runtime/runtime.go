@@ -1203,7 +1203,4 @@ type LiveEvent struct {
 	Value              string `json:"value,omitempty"`
 	ActiveStartTimeSec int64  `json:"active_start_time_sec,omitempty"`
 	ActiveEndTimeSec   int64  `json:"active_end_time_sec,omitempty"`
-
-	CCRPCCall(ctx context.Context, name, key, cid string, vars map[string]string, in []byte) ([]byte, error)
-	AuthenticateToken(ctx context.Context, token string) (userID string, username string, vars map[string]string, expiry int64, ok bool)
 }
